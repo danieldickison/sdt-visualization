@@ -1,0 +1,71 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <title>Signal Detection Theory Visualization</title>
+    <script type="text/javascript" src="js/knockout-3.1.0.js"></script>
+    <script type="text/javascript" src="js/sdt.js"></script>
+    <style>
+        #graph {
+            width: 800px;
+            height: 400px;
+            position: relative;
+        }
+        #graph > canvas {
+            position: absolute;
+        }
+    </style>
+</head>
+<body>
+    <div id="graph">
+        <canvas class="bg" width="800" height="400"></canvas>
+        <canvas class="cr-fill"  width="800" height="400" data-bind="css: {highlight: prob.cr.highlight}"></canvas>
+        <canvas class="hit-fill"  width="800" height="400" data-bind="css: {highlight: prob.hit.highlight}"></canvas>
+        <canvas class="fa-fill"  width="800" height="400" data-bind="css: {highlight: prob.fa.highlight}"></canvas>
+        <canvas class="miss-fill"  width="800" height="400" data-bind="css: {highlight: prob.miss.highlight}"></canvas>
+        <canvas class="fg"  width="800" height="400"></canvas>
+    </div>
+    <form id="params">
+        <fieldset class="probabilities">
+            <h3>Response Probabilities</h3>
+            <div class="targets">
+                <label data-bind="hover: prob.hit.highlight, css: {highlight: prob.hit.highlight}">
+                    <span class="label">P(hit)</span>
+                    <input type="number" data-bind="value: prob.hit">
+                </label>
+                <label data-bind="hover: prob.miss.highlight, css: {highlight: prob.miss.highlight}">
+                    <span class="label">P(miss)</span>
+                    <input type="number" data-bind="value: prob.miss">
+                </label>
+            </div>
+            <div class="foils">
+                <label data-bind="hover: prob.fa.highlight, css: {highlight: prob.fa.highlight}">
+                    <span class="label">P(fa)</span>
+                    <input type="number" data-bind="value: prob.hit">
+                </label>
+                <label data-bind="hover: prob.cr.highlight, css: {highlight: prob.cr.highlight}">
+                    <span class="label"><abbr></abbr> P(cr)</span>
+                    <input type="number" data-bind="value: prob.miss">
+                </label>
+            </div>
+        </fieldset>
+        <fieldset class="z-scores">
+            <label data-bind="hover: z.hit.highlight, css: {highlight: z.hit.highlight}">
+                <span class="label">Z(hit)</span>
+                <input type="number" data-bind="value: z.hit">
+            </label>
+            <label data-bind="hover: z.fa.highlight, css: {highlight: z.fa.highlight}">
+                <span class="label">Z(fa)</span>
+                <input type="number" data-bind="value: z.fa">
+            </label>
+            <label data-bind="hover: d_prime.highlight, css: {highlight: d_prime.highlight}">
+                <span class="label">d'</span>
+                <input type="number" data-bind="value: d_prime">
+            </label>
+            <label data-bind="hover: c.highlight, css: {highlight: c.highlight}">
+                <span class="label">C</span>
+                <input type="number" data-bind="value: c">
+            </label>
+        </fieldset>
+    </form>
+</body>
+</html>
