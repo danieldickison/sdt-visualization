@@ -14,13 +14,24 @@
     var z_width = 7,
         bottom_margin = 20,
         p_max = 0.5,
-        arrow_size = 5;
+        arrow_size = 5,
+        target_color = '#092',
+        foil_color = '#c37',
+        hit_color = '#6f9',
+        miss_color = '#99f',
+        fa_color = '#f99',
+        cr_color = '#ff7';
 
     function redraw(vm) {
         var graph = document.getElementById('graph'),
             bg_ctx = graph.querySelector('canvas.bg').getContext('2d'),
             fg_ctx = graph.querySelector('canvas.fg').getContext('2d'),
             c_ctx = graph.querySelector('canvas.c').getContext('2d'),
+            hit_ctx = graph.querySelector('canvas.hit').getContext('2d'),
+            miss_ctx = graph.querySelector('canvas.miss').getContext('2d'),
+            fa_ctx = graph.querySelector('canvas.fa').getContext('2d'),
+            cr_ctx = graph.querySelector('canvas.cr').getContext('2d'),
+            ctxs = [bg_ctx, fg_ctx, c_ctx, hit_ctx, miss_ctx, fa_ctx, cr_ctx],
             w = bg_ctx.canvas.width,
             h_full = bg_ctx.canvas.height,
             h = h_full - bottom_margin,
@@ -37,29 +48,32 @@
 
         console.log('redraw', w, h);
 
+        for (var i = ctxs.length - 1; i >= 0; i--) {
+            ctxs[i].beginPath();
+            ctxs[i].clearRect(0, 0, w, h_full);
+        }
 
         /*** bg layer ***/
-        bg_ctx.beginPath();
-        bg_ctx.clearRect(0, 0, w, h_full);
         bg_ctx.textAlign = 'center';
         bg_ctx.textBaseline = 'top';
-        bg_ctx.font = 'italic 12px sans-serif';
         bg_ctx.strokeStyle = bg_ctx.fillStyle = '#666';
         bg_ctx.lineWidth = 2;
 
         // labels
+        bg_ctx.font = 'italic 12px sans-serif';
         bg_ctx.fillText('Z', w-10, h+5);
         bg_ctx.fillText('p', w/2-10, 5);
         
         // x-axis
         bg_ctx.moveTo(0, h);
         bg_ctx.lineTo(w, h);
-        bg_ctx.moveTo(arrow_size, h-arrow_size);
-        bg_ctx.lineTo(0, h);
-        bg_ctx.lineTo(arrow_size, h+arrow_size);
-        bg_ctx.moveTo(w-arrow_size, h-arrow_size);
-        bg_ctx.lineTo(w, h);
-        bg_ctx.lineTo(w-arrow_size, h+arrow_size);
+        bg_ctx.moveTo(arrow_size+2, h-arrow_size);
+        bg_ctx.lineTo(1, h);
+        bg_ctx.lineTo(arrow_size+2, h+arrow_size);
+        bg_ctx.moveTo(w-arrow_size-2, h-arrow_size);
+        bg_ctx.lineTo(w-1, h);
+        bg_ctx.lineTo(w-arrow_size-2, h+arrow_size);
+        bg_ctx.font = '12px sans-serif';
         for (z = -Math.floor(z_width/2); z <= z_width/2; ++z) {
             x = z_x(z);
             bg_ctx.moveTo(x, h);
@@ -69,9 +83,9 @@
         // y-axis
         bg_ctx.moveTo(w/2, h);
         bg_ctx.lineTo(w/2, 0);
-        bg_ctx.moveTo(w/2-arrow_size, arrow_size);
-        bg_ctx.lineTo(w/2, 0);
-        bg_ctx.lineTo(w/2+arrow_size, arrow_size);
+        bg_ctx.moveTo(w/2-arrow_size, arrow_size+2);
+        bg_ctx.lineTo(w/2, 1);
+        bg_ctx.lineTo(w/2+arrow_size, arrow_size+2);
         bg_ctx.textBaseline = 'middle';
         bg_ctx.textAlign = 'right';
         for (p = 0.1; p < p_max; p += 0.1) {
@@ -83,36 +97,62 @@
         bg_ctx.stroke();
 
 
-        /*** fg layer ***/
-        fg_ctx.beginPath();
-        fg_ctx.clearRect(0, 0, w, h_full);
+        /*** curves ***/
 
-        // Curves: this could be optimized by caching pdf values.
+        function normal(z_offset, left_ctx, right_ctx, criterion) {
+            // This could be optimized by caching pdf values.
+            var fill_left = true,
+                x = 0,
+                z = x_z(x) + z_offset,
+                y = p_y(pdf(z + z_offset));
+            fg_ctx.beginPath();
+            left_ctx.beginPath();
+            right_ctx.beginPath();
+            fg_ctx.moveTo(0, y);
+            left_ctx.moveTo(0, h);
+            left_ctx.lineTo(0, y);
+            for (x = 1; x < w; ++x) {
+                z = x_z(x);
+                y = p_y(pdf(z+ z_offset));
+                fg_ctx.lineTo(x, y);
+                if (fill_left) {
+                    left_ctx.lineTo(x, y);
+                    if (z >= criterion) {
+                        left_ctx.lineTo(x, h);
+                        left_ctx.closePath();
+                        fill_left = false;
+                        right_ctx.moveTo(x, h);
+                        right_ctx.lineTo(x, y);
+                    }
+                }
+                else {
+                    right_ctx.lineTo(x, y);
+                }
+            }
+            right_ctx.lineTo(w, h);
+            right_ctx.closePath();
+            fg_ctx.stroke();
+            left_ctx.fill();
+            right_ctx.fill();
+        }
+
         var dp2 = vm.d_prime() / 2;
-        console.log('dp2:', dp2);
 
         // target pdf
-        fg_ctx.beginPath();
-        fg_ctx.moveTo(0, p_y(pdf(x_z(0) - dp2)));
-        for (x = 1; x < w; ++x) {
-            fg_ctx.lineTo(x, p_y(pdf(x_z(x) - dp2)));
-        }
-        fg_ctx.strokeStyle = '#0a2';
-        fg_ctx.stroke();
+        fg_ctx.strokeStyle = target_color;
+        hit_ctx.fillStyle = hit_color;
+        miss_ctx.fillStyle = miss_color;
+        normal(-dp2, miss_ctx, hit_ctx, vm.c());
 
         // foil pdf
-        fg_ctx.beginPath();
-        fg_ctx.moveTo(0, p_y(pdf(x_z(0) + dp2)));
-        for (x = 1; x < w; ++x) {
-            fg_ctx.lineTo(x, p_y(pdf(x_z(x) + dp2)));
-        }
-        fg_ctx.strokeStyle = '#a20';
-        fg_ctx.stroke();
+        fg_ctx.strokeStyle = foil_color;
+        cr_ctx.fillStyle = cr_color;
+        fa_ctx.fillStyle = fa_color;
+        normal(dp2, cr_ctx, fa_ctx, vm.c());
+
 
         // criterion line
         var c_x = z_x(vm.c());
-        c_ctx.beginPath();
-        c_ctx.clearRect(0, 0, w, h_full);
         c_ctx.moveTo(c_x, 0);
         c_ctx.lineTo(c_x, h+5);
         c_ctx.lineWidth = 2;
@@ -127,7 +167,7 @@
     function SDTViewModel(redraw) {
         var self = this;
         this.prob = {
-            hit: observable_hl(0.8),
+            hit: observable_hl(0.85),
             miss: computed_hl({
                 read: function () {
                     return 1-self.prob.hit();
@@ -136,7 +176,7 @@
                     self.prob.hit(1-miss);
                 }
             }),
-            fa: observable_hl(0.2),
+            fa: observable_hl(0.3),
             cr: computed_hl({
                 read: function () {
                     return 1-self.prob.fa();

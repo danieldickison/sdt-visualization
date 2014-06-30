@@ -14,10 +14,16 @@
             position: absolute;
         }
         #graph > canvas.highlightable {
-            opacity: 0.5;
+            opacity: 0.25;
             transition: all 0.2s;
         }
         #graph > canvas.highlightable.highlight {
+            opacity: 0.5;
+        }
+        #graph > canvas.highlightable.dark {
+            opacity: 0.5;
+        }
+        #graph > canvas.highlightable.dark.highlight {
             opacity: 1;
         }
     </style>
@@ -25,12 +31,12 @@
 <body>
     <div id="graph">
         <canvas class="bg" width="800" height="400"></canvas>
-        <canvas class="cr-fill highlightable"  width="800" height="400" data-bind="css: {highlight: prob.cr.highlight}"></canvas>
-        <canvas class="hit-fill highlightable"  width="800" height="400" data-bind="css: {highlight: prob.hit.highlight}"></canvas>
-        <canvas class="fa-fill highlightable"  width="800" height="400" data-bind="css: {highlight: prob.fa.highlight}"></canvas>
-        <canvas class="miss-fill highlightable"  width="800" height="400" data-bind="css: {highlight: prob.miss.highlight}"></canvas>
+        <canvas class="cr highlightable"  width="800" height="400" data-bind="css: {highlight: prob.cr.highlight}"></canvas>
+        <canvas class="hit highlightable"  width="800" height="400" data-bind="css: {highlight: prob.hit.highlight}"></canvas>
+        <canvas class="fa highlightable"  width="800" height="400" data-bind="css: {highlight: prob.fa.highlight}"></canvas>
+        <canvas class="miss highlightable"  width="800" height="400" data-bind="css: {highlight: prob.miss.highlight}"></canvas>
         <canvas class="fg"  width="800" height="400"></canvas>
-        <canvas class="c highlightable"  width="800" height="400" data-bind="css: {highlight: c.highlight}"></canvas>
+        <canvas class="c dark highlightable"  width="800" height="400" data-bind="css: {highlight: c.highlight}"></canvas>
     </div>
     <form id="params">
         <fieldset class="probabilities">
