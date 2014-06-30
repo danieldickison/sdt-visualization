@@ -5,10 +5,16 @@
     <script type="text/javascript" src="js/knockout-3.1.0.js"></script>
     <script type="text/javascript" src="js/sdt.js"></script>
     <style>
+        body {
+            font-family: "helvetica neue", helvetica, sans-serif;
+            font-weight: 200;
+        }
         #graph {
             width: 800px;
             height: 400px;
             position: relative;
+            background-color: #f5f5f5;
+            border: solid 1px #ccc;
         }
         #graph > canvas {
             position: absolute;
@@ -26,58 +32,89 @@
         #graph > canvas.highlightable.dark.highlight {
             opacity: 1;
         }
+        fieldset {
+            margin: 0.5ex 0;
+            padding: 0;
+            background-color: #f5f5f5;
+            border: solid 1px #ccc;
+        }
+        label {
+            display: inline-block;
+            padding: 0.5ex 1ex;
+        }
+        label.highlight {
+            background-color: #e8e8e8;
+        }
+        label abbr {
+            width: 3em;
+            text-align: right;
+            display: inline-block;
+        }
+        label input {
+            font-family: "helvetica neue", helveca, sans-serif;
+            font-weight: 400;
+            font-size: 12pt;
+            width: 5em;
+        }
     </style>
 </head>
 <body>
     <div id="graph">
-        <canvas class="bg" width="800" height="400"></canvas>
         <canvas class="cr highlightable"  width="800" height="400" data-bind="css: {highlight: prob.cr.highlight}"></canvas>
         <canvas class="hit highlightable"  width="800" height="400" data-bind="css: {highlight: prob.hit.highlight}"></canvas>
         <canvas class="fa highlightable"  width="800" height="400" data-bind="css: {highlight: prob.fa.highlight}"></canvas>
         <canvas class="miss highlightable"  width="800" height="400" data-bind="css: {highlight: prob.miss.highlight}"></canvas>
+        <canvas class="axes" width="800" height="400"></canvas>
         <canvas class="fg"  width="800" height="400"></canvas>
         <canvas class="c dark highlightable"  width="800" height="400" data-bind="css: {highlight: c.highlight}"></canvas>
     </div>
     <form id="params">
         <fieldset class="probabilities">
-            <h3>Response Probabilities</h3>
             <div class="targets">
                 <label data-bind="css: {highlight: prob.hit.highlight}">
-                    <span class="label">P(hit)</span>
-                    <input type="number" min="0.05" max="0.95" step="0.05" data-bind="value: prob.hit, hasFocus: prob.hit.highlight">
+                    <abbr title="probability of target hit"><i>P</i>(hit)</abbr>
+                    <input type="number" min="0.01" max="0.99" step="0.05"
+                        data-bind="value: prob.hit.str, hasFocus: prob.hit.highlight">
                 </label>
                 <label data-bind="css: {highlight: prob.miss.highlight}">
-                    <span class="label">P(miss)</span>
-                    <input type="number" min="0.05" max="0.95" step="0.05" data-bind="value: prob.miss, hasFocus: prob.miss.highlight">
+                    <abbr title="probability of target miss"><i>P</i>(miss)</abbr>
+                    <input type="number" min="0.01" max="0.99" step="0.05"
+                        data-bind="value: prob.miss.str, hasFocus: prob.miss.highlight">
                 </label>
             </div>
             <div class="foils">
                 <label data-bind="css: {highlight: prob.fa.highlight}">
-                    <span class="label">P(fa)</span>
-                    <input type="number" min="0.05" max="0.95" step="0.05" data-bind="value: prob.fa, hasFocus: prob.fa.highlight">
+                    <abbr title="probability of foil false alarm"><i>P</i>(fa)</abbr>
+                    <input type="number" min="0.01" max="0.99" step="0.05"
+                        data-bind="value: prob.fa.str, hasFocus: prob.fa.highlight">
                 </label>
                 <label data-bind="css: {highlight: prob.cr.highlight}">
-                    <span class="label"><abbr></abbr> P(cr)</span>
-                    <input type="number" min="0.05" max="0.95" step="0.05" data-bind="value: prob.cr, hasFocus: prob.cr.highlight">
+                    <abbr title="probability of foil correct rejection"><i>P</i>(cr)</abbr>
+                    <input type="number" min="0.01" max="0.99" step="0.05"
+                        data-bind="value: prob.cr.str, hasFocus: prob.cr.highlight">
                 </label>
             </div>
         </fieldset>
         <fieldset class="z-scores">
             <label data-bind="css: {highlight: z.hit.highlight}">
-                <span class="label">Z(hit)</span>
-                <input type="number" data-bind="value: z.hit">
+                <abbr title="Z score of hit"><i>Z</i>(hit)</abbr>
+                <input type="number" min="-3" max="3" step="0.1"
+                    data-bind="value: z.hit.str, hasFocus: z.hit.highlight">
             </label>
             <label data-bind="css: {highlight: z.fa.highlight}">
-                <span class="label">Z(fa)</span>
-                <input type="number" data-bind="value: z.fa">
+                <abbr title="Z score of false alarm"><i>Z</i>(fa)</abbr>
+                <input type="number" min="-3" max="3" step="0.1"
+                    data-bind="value: z.fa.str, hasFocus: z.fa.highlight">
             </label>
             <label data-bind="css: {highlight: d_prime.highlight}">
-                <span class="label">d'</span>
-                <input type="number" data-bind="value: d_prime, hasFocus: d_prime.highlight">
+                <abbr title="d-prime"><i>d</i>'</abbr>
+                <input type="number" min="-6" max="6" step="0.1"
+                    data-bind="value: d_prime.str, hasFocus: d_prime.highlight">
             </label>
             <label data-bind="css: {highlight: c.highlight}">
-                <span class="label">C</span>
-                <input type="number" data-bind="value: c, hasFocus: c.highlight">
+                <abbr title="criterion"><i>C</i></abbr>
+                <input type="number" min="-2" max="2" step="0.1"
+                    data-bind="value: c.str, hasFocus: c.highlight">
             </label>
         </fieldset>
     </form>

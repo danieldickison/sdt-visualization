@@ -20,20 +20,22 @@
         hit_color = '#6f9',
         miss_color = '#99f',
         fa_color = '#f99',
-        cr_color = '#ff7';
+        cr_color = '#fd8',
+        criterion_color = '#03e',
+        criterion_line_dash = [6, 3];
 
     function redraw(vm) {
         var graph = document.getElementById('graph'),
-            bg_ctx = graph.querySelector('canvas.bg').getContext('2d'),
+            axes_ctx = graph.querySelector('canvas.axes').getContext('2d'),
             fg_ctx = graph.querySelector('canvas.fg').getContext('2d'),
             c_ctx = graph.querySelector('canvas.c').getContext('2d'),
             hit_ctx = graph.querySelector('canvas.hit').getContext('2d'),
             miss_ctx = graph.querySelector('canvas.miss').getContext('2d'),
             fa_ctx = graph.querySelector('canvas.fa').getContext('2d'),
             cr_ctx = graph.querySelector('canvas.cr').getContext('2d'),
-            ctxs = [bg_ctx, fg_ctx, c_ctx, hit_ctx, miss_ctx, fa_ctx, cr_ctx],
-            w = bg_ctx.canvas.width,
-            h_full = bg_ctx.canvas.height,
+            ctxs = [axes_ctx, fg_ctx, c_ctx, hit_ctx, miss_ctx, fa_ctx, cr_ctx],
+            w = axes_ctx.canvas.width,
+            h_full = axes_ctx.canvas.height,
             h = h_full - bottom_margin,
             x, y, z, p;
         function x_z(x) {
@@ -54,47 +56,47 @@
         }
 
         /*** bg layer ***/
-        bg_ctx.textAlign = 'center';
-        bg_ctx.textBaseline = 'top';
-        bg_ctx.strokeStyle = bg_ctx.fillStyle = '#666';
-        bg_ctx.lineWidth = 2;
+        axes_ctx.textAlign = 'center';
+        axes_ctx.textBaseline = 'top';
+        axes_ctx.strokeStyle = axes_ctx.fillStyle = '#666';
+        axes_ctx.lineWidth = 2;
 
         // labels
-        bg_ctx.font = 'italic 12px sans-serif';
-        bg_ctx.fillText('Z', w-10, h+5);
-        bg_ctx.fillText('p', w/2-10, 5);
+        axes_ctx.font = 'italic 12px sans-serif';
+        axes_ctx.fillText('Z', w-10, h+5);
+        axes_ctx.fillText('p', w/2-10, 5);
         
         // x-axis
-        bg_ctx.moveTo(0, h);
-        bg_ctx.lineTo(w, h);
-        bg_ctx.moveTo(arrow_size+2, h-arrow_size);
-        bg_ctx.lineTo(1, h);
-        bg_ctx.lineTo(arrow_size+2, h+arrow_size);
-        bg_ctx.moveTo(w-arrow_size-2, h-arrow_size);
-        bg_ctx.lineTo(w-1, h);
-        bg_ctx.lineTo(w-arrow_size-2, h+arrow_size);
-        bg_ctx.font = '12px sans-serif';
+        axes_ctx.moveTo(0, h);
+        axes_ctx.lineTo(w, h);
+        axes_ctx.moveTo(arrow_size+2, h-arrow_size);
+        axes_ctx.lineTo(1, h);
+        axes_ctx.lineTo(arrow_size+2, h+arrow_size);
+        axes_ctx.moveTo(w-arrow_size-2, h-arrow_size);
+        axes_ctx.lineTo(w-1, h);
+        axes_ctx.lineTo(w-arrow_size-2, h+arrow_size);
+        axes_ctx.font = '12px sans-serif';
         for (z = -Math.floor(z_width/2); z <= z_width/2; ++z) {
             x = z_x(z);
-            bg_ctx.moveTo(x, h);
-            bg_ctx.lineTo(x, h+5);
-            bg_ctx.fillText(z.toString(), x, h+5);
+            axes_ctx.moveTo(x, h);
+            axes_ctx.lineTo(x, h+5);
+            axes_ctx.fillText(z.toString(), x, h+5);
         }
         // y-axis
-        bg_ctx.moveTo(w/2, h);
-        bg_ctx.lineTo(w/2, 0);
-        bg_ctx.moveTo(w/2-arrow_size, arrow_size+2);
-        bg_ctx.lineTo(w/2, 1);
-        bg_ctx.lineTo(w/2+arrow_size, arrow_size+2);
-        bg_ctx.textBaseline = 'middle';
-        bg_ctx.textAlign = 'right';
+        axes_ctx.moveTo(w/2, h);
+        axes_ctx.lineTo(w/2, 0);
+        axes_ctx.moveTo(w/2-arrow_size, arrow_size+2);
+        axes_ctx.lineTo(w/2, 1);
+        axes_ctx.lineTo(w/2+arrow_size, arrow_size+2);
+        axes_ctx.textBaseline = 'middle';
+        axes_ctx.textAlign = 'right';
         for (p = 0.1; p < p_max; p += 0.1) {
             y = p_y(p);
-            bg_ctx.moveTo(w/2, y);
-            bg_ctx.lineTo(w/2 - 5, y);
-            bg_ctx.fillText('0.' + Math.round(10*p), w/2-10, y);
+            axes_ctx.moveTo(w/2, y);
+            axes_ctx.lineTo(w/2 - 5, y);
+            axes_ctx.fillText('0.' + Math.round(10*p), w/2-10, y);
         }
-        bg_ctx.stroke();
+        axes_ctx.stroke();
 
 
         /*** curves ***/
@@ -103,7 +105,7 @@
             // This could be optimized by caching pdf values.
             var fill_left = true,
                 x = 0,
-                z = x_z(x) + z_offset,
+                z = x_z(x),
                 y = p_y(pdf(z + z_offset));
             fg_ctx.beginPath();
             left_ctx.beginPath();
@@ -111,7 +113,7 @@
             fg_ctx.moveTo(0, y);
             left_ctx.moveTo(0, h);
             left_ctx.lineTo(0, y);
-            for (x = 1; x < w; ++x) {
+            for (x = 1; x <= w; ++x) {
                 z = x_z(x);
                 y = p_y(pdf(z+ z_offset));
                 fg_ctx.lineTo(x, y);
@@ -156,7 +158,8 @@
         c_ctx.moveTo(c_x, 0);
         c_ctx.lineTo(c_x, h+5);
         c_ctx.lineWidth = 2;
-        c_ctx.strokeStyle = c_ctx.fillStyle = '#03d';
+        c_ctx.strokeStyle = c_ctx.fillStyle = criterion_color;
+        c_ctx.setLineDash(criterion_line_dash);
         c_ctx.stroke();
         c_ctx.font = 'italic 12px sans-serif';
         c_ctx.textAlign = 'center';
@@ -167,8 +170,8 @@
     function SDTViewModel(redraw) {
         var self = this;
         this.prob = {
-            hit: observable_hl(0.85),
-            miss: computed_hl({
+            hit: observable_ui(0.85),
+            miss: computed_ui({
                 read: function () {
                     return 1-self.prob.hit();
                 },
@@ -176,8 +179,8 @@
                     self.prob.hit(1-miss);
                 }
             }),
-            fa: observable_hl(0.3),
-            cr: computed_hl({
+            fa: observable_ui(0.3),
+            cr: computed_ui({
                 read: function () {
                     return 1-self.prob.fa();
                 },
@@ -187,7 +190,7 @@
             })
         };
         this.z = {
-            hit: computed_hl({
+            hit: computed_ui({
                 read: function () {
                     return probit(self.prob.hit());
                 },
@@ -195,7 +198,7 @@
                     self.prob.hit(cdf(zhit));
                 }
             }),
-            fa: computed_hl({
+            fa: computed_ui({
                 read: function () {
                     return probit(self.prob.fa());
                 },
@@ -204,7 +207,7 @@
                 }
             })
         };
-        this.d_prime = computed_hl({
+        this.d_prime = computed_ui({
             read: function () {
                 return self.z.hit() - self.z.fa();
             },
@@ -215,7 +218,7 @@
             }
         });
         this.d_prime_delayed = ko.computed(this.d_prime).extend({rateLimit: 100});
-        this.c = computed_hl({
+        this.c = computed_ui({
             read: function () {
                 return -(self.z.hit() + self.z.fa())/2;
             },
@@ -230,15 +233,32 @@
         });
     }
 
-    function observable_hl(val) {
+    function observable_ui(val) {
         var o = ko.observable(val);
         o.highlight = ko.observable(false);
+        o.str = ko.computed({
+            read: function () {
+                return o().toFixed(3);
+            },
+            write: function (new_val) {
+                o(parseFloat(new_val));
+            }
+        });
         return o;
     }
-    function computed_hl(options) {
+    function computed_ui(options) {
         options.deferEvaluation = true;
         var o = ko.computed.call(ko, options);
         o.highlight = ko.observable(false);
+        o.str = ko.computed({
+            read: function () {
+                return o().toFixed(3);
+            },
+            write: function (new_val) {
+                o(parseFloat(new_val));
+            },
+            deferEvaluation: true
+        });
         return o;
     }
 
