@@ -11,6 +11,74 @@
 
     document.addEventListener('DOMContentLoaded', ready);
 
+    ko.bindingHandlers.dragStep = {
+        init: function(element, valueAccessor, allBindings, viewModel, bindingContext) {
+            var y0, y_prev, tracking;
+
+            element.addEventListener('mousedown', function (event) {
+                y0 = event.clientY;
+                tracking = false;
+                document.body.addEventListener('mousemove', drag, false);
+                document.body.addEventListener('mouseup', mouseup, false);
+                document.body.addEventListener('mouseleave', mouseup, false);
+            }, false);
+
+            function getOptions() {
+                var options = valueAccessor();
+                if (ko.isWriteableObservable(options)) {
+                    options = {
+                        value: options
+                    };
+                }
+                return options;
+            }
+
+            function drag(event) {
+                var y = event.clientY,
+                    options = getOptions();
+                var nullZone = ko.utils.unwrapObservable(options.nullZone) || 2,
+                    perPixel = ko.utils.unwrapObservable(options.perPixel) || 0.01;
+                if (tracking) {
+                    var dy = y - y_prev,
+                        dv = -dy * perPixel, // flip y coordinates so up increases value.
+                        v0 = options.value();
+                    options.value(v0 + dv);
+                    options.value.highlight(true);
+                }
+                else if (Math.abs(y - y0) > nullZone) {
+                    tracking = true;
+                }
+                y_prev = y;
+                event.preventDefault();
+            }
+
+            function mouseup(event) {
+                document.body.removeEventListener('mousemove', drag);
+                document.body.removeEventListener('mouseup', mouseup);
+                document.body.removeEventListener('mouseleave', mouseup);
+            }
+        }
+    };
+
+    ko.extenders.limitRange = function (target, options) {
+        var min = options.min,
+            max = options.max;
+        return ko.computed({
+            read: target,
+            write: function(newValue) {
+                if (newValue < options.min) {
+                    newValue = options.min;
+                }
+                else if (newValue > options.max) {
+                    newValue = options.max;
+                }
+                target(newValue);
+            },
+            deferEvaluation: true
+        });
+    };
+
+
     var z_width = 7,
         bottom_margin = 20,
         p_max = 0.5,
@@ -18,8 +86,8 @@
         target_color = '#092',
         foil_color = '#c37',
         hit_color = '#6f9',
-        miss_color = '#99f',
-        fa_color = '#f99',
+        miss_color = '#aaf',
+        fa_color = '#faa',
         cr_color = '#fd8',
         criterion_color = '#03e',
         criterion_line_dash = [6, 3];
@@ -47,8 +115,6 @@
         function p_y(p) {
             return h - h*p/p_max;
         }
-
-        console.log('redraw', w, h);
 
         for (var i = ctxs.length - 1; i >= 0; i--) {
             ctxs[i].beginPath();
@@ -170,7 +236,7 @@
     function SDTViewModel(redraw) {
         var self = this;
         this.prob = {
-            hit: observable_ui(0.85),
+            hit: observable_ui(0.85, 0.01, 0.99),
             miss: computed_ui({
                 read: function () {
                     return 1-self.prob.hit();
@@ -178,8 +244,8 @@
                 write: function (miss) {
                     self.prob.hit(1-miss);
                 }
-            }),
-            fa: observable_ui(0.3),
+            }, 0.01, 0.99),
+            fa: observable_ui(0.3, 0.01, 0.99),
             cr: computed_ui({
                 read: function () {
                     return 1-self.prob.fa();
@@ -187,7 +253,7 @@
                 write: function (cr) {
                     self.prob.fa(1-cr);
                 }
-            })
+            }, 0.01, 0.99)
         };
         this.z = {
             hit: computed_ui({
@@ -197,7 +263,7 @@
                 write: function (zhit) {
                     self.prob.hit(cdf(zhit));
                 }
-            }),
+            }, -3, 3),
             fa: computed_ui({
                 read: function () {
                     return probit(self.prob.fa());
@@ -205,7 +271,7 @@
                 write: function (zfa) {
                     self.prob.fa(cdf(zfa));
                 }
-            })
+            }, -3, 3)
         };
         this.d_prime = computed_ui({
             read: function () {
@@ -216,8 +282,7 @@
                 self.prob.hit(cdf(c - dp/2));
                 self.prob.fa(cdf(dp/2 + c));
             }
-        });
-        this.d_prime_delayed = ko.computed(this.d_prime).extend({rateLimit: 100});
+        }, -6, 6);
         this.c = computed_ui({
             read: function () {
                 return -(self.z.hit() + self.z.fa())/2;
@@ -227,14 +292,15 @@
                 self.z.hit(dp/2 - c);
                 self.z.fa(-dp/2 + c);
             }
-        });
+        }, -2, 2);
+        this.d_prime_delayed = ko.computed(this.d_prime).extend({rateLimit: 100});
         this.d_prime_delayed.subscribe(function(dp) {
             redraw(self);
         });
     }
 
-    function observable_ui(val) {
-        var o = ko.observable(val);
+    function observable_ui(val, min, max) {
+        var o = ko.observable(val).extend({limitRange: {min: min, max: max}, notify: 'always'});
         o.highlight = ko.observable(false);
         o.str = ko.computed({
             read: function () {
@@ -246,9 +312,9 @@
         });
         return o;
     }
-    function computed_ui(options) {
+    function computed_ui(options, min, max) {
         options.deferEvaluation = true;
-        var o = ko.computed.call(ko, options);
+        var o = ko.computed.call(ko, options).extend({limitRange: {min: min, max: max}});
         o.highlight = ko.observable(false);
         o.str = ko.computed({
             read: function () {
@@ -268,12 +334,14 @@
 
     // https://en.wikipedia.org/wiki/Normal_distribution#Generating_values_from_normal_distribution
     // Approximation from Zelen & Severo.
-    function cdf(x) {
+    var cdf = (function () {
         var b0 = 0.2316419, b1 = 0.319381530, b2 = -0.356563782, b3 = 1.781477937, b4 = -1.821255978, b5 = 1.330274429;
-        var t = 1.0 / (1.0 + b0 * x);
-        var p = Math.pow;
-        return 1.0 - pdf(x) * (b1*t + b2*p(t,2) + b3*p(t,3) + b4*p(t,4) + b5*p(t,5));
-    }
+        return function cdf(x) {
+            var t = 1.0 / (1.0 + b0 * x);
+            var p = Math.pow;
+            return 1.0 - pdf(x) * (b1*t + b2*p(t,2) + b3*p(t,3) + b4*p(t,4) + b5*p(t,5));
+        };
+    })();
 
     // http://home.online.no/~pjacklam/notes/invnorm/
     var probit = (function () {

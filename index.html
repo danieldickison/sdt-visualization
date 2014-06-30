@@ -41,6 +41,7 @@
         label {
             display: inline-block;
             padding: 0.5ex 1ex;
+            cursor: ns-resize;
         }
         label.highlight {
             background-color: #e8e8e8;
@@ -71,24 +72,24 @@
     <form id="params">
         <fieldset class="probabilities">
             <div class="targets">
-                <label data-bind="css: {highlight: prob.hit.highlight}">
+                <label data-bind="dragStep: {value: prob.hit, perPixel: 0.003}, css: {highlight: prob.hit.highlight}">
                     <abbr title="probability of target hit"><i>P</i>(hit)</abbr>
                     <input type="number" min="0.01" max="0.99" step="0.05"
                         data-bind="value: prob.hit.str, hasFocus: prob.hit.highlight">
                 </label>
-                <label data-bind="css: {highlight: prob.miss.highlight}">
+                <label data-bind="dragStep: {value: prob.miss, perPixel: 0.003}, css: {highlight: prob.miss.highlight}">
                     <abbr title="probability of target miss"><i>P</i>(miss)</abbr>
                     <input type="number" min="0.01" max="0.99" step="0.05"
                         data-bind="value: prob.miss.str, hasFocus: prob.miss.highlight">
                 </label>
             </div>
             <div class="foils">
-                <label data-bind="css: {highlight: prob.fa.highlight}">
+                <label data-bind="dragStep: {value: prob.fa, perPixel: 0.003}, css: {highlight: prob.fa.highlight}">
                     <abbr title="probability of foil false alarm"><i>P</i>(fa)</abbr>
                     <input type="number" min="0.01" max="0.99" step="0.05"
                         data-bind="value: prob.fa.str, hasFocus: prob.fa.highlight">
                 </label>
-                <label data-bind="css: {highlight: prob.cr.highlight}">
+                <label data-bind="dragStep: {value: prob.cr, perPixel: 0.003}, css: {highlight: prob.cr.highlight}">
                     <abbr title="probability of foil correct rejection"><i>P</i>(cr)</abbr>
                     <input type="number" min="0.01" max="0.99" step="0.05"
                         data-bind="value: prob.cr.str, hasFocus: prob.cr.highlight">
@@ -96,22 +97,22 @@
             </div>
         </fieldset>
         <fieldset class="z-scores">
-            <label data-bind="css: {highlight: z.hit.highlight}">
+            <label data-bind="dragStep: z.hit, css: {highlight: z.hit.highlight}">
                 <abbr title="Z score of hit"><i>Z</i>(hit)</abbr>
                 <input type="number" min="-3" max="3" step="0.1"
                     data-bind="value: z.hit.str, hasFocus: z.hit.highlight">
             </label>
-            <label data-bind="css: {highlight: z.fa.highlight}">
+            <label data-bind="dragStep: z.fa, css: {highlight: z.fa.highlight}">
                 <abbr title="Z score of false alarm"><i>Z</i>(fa)</abbr>
-                <input type="number" min="-3" max="3" step="0.1"
+                <input type="number"
                     data-bind="value: z.fa.str, hasFocus: z.fa.highlight">
             </label>
-            <label data-bind="css: {highlight: d_prime.highlight}">
+            <label data-bind="dragStep: d_prime, css: {highlight: d_prime.highlight}">
                 <abbr title="d-prime"><i>d</i>'</abbr>
                 <input type="number" min="-6" max="6" step="0.1"
                     data-bind="value: d_prime.str, hasFocus: d_prime.highlight">
             </label>
-            <label data-bind="css: {highlight: c.highlight}">
+            <label data-bind="dragStep: c, css: {highlight: c.highlight}">
                 <abbr title="criterion"><i>C</i></abbr>
                 <input type="number" min="-2" max="2" step="0.1"
                     data-bind="value: c.str, hasFocus: c.highlight">
