@@ -3,67 +3,201 @@
 
     function ready() {
         document.removeEventListener("DOMContentLoaded", ready, false);
-        redraw();
+        var vm = new SDTViewModel(redraw);
+        window.sdt_vm = vm;
+        redraw(vm);
+        ko.applyBindings(vm);
     }
 
     document.addEventListener('DOMContentLoaded', ready);
 
-    function redraw() {
+    var z_width = 7,
+        bottom_margin = 20,
+        p_max = 0.5,
+        arrow_size = 5;
+
+    function redraw(vm) {
         var graph = document.getElementById('graph'),
             bg_ctx = graph.querySelector('canvas.bg').getContext('2d'),
             fg_ctx = graph.querySelector('canvas.fg').getContext('2d'),
+            c_ctx = graph.querySelector('canvas.c').getContext('2d'),
             w = bg_ctx.canvas.width,
-            h = bg_ctx.canvas.height;
+            h_full = bg_ctx.canvas.height,
+            h = h_full - bottom_margin,
+            x, y, z, p;
         function x_z(x) {
-            return 8 * x / w - 4;
+            return z_width * x / w - z_width/2;
+        }
+        function z_x(z) {
+            return (z + z_width/2) * (w / z_width);
         }
         function p_y(p) {
-            return h - 20 - (h-20)*p;
+            return h - h*p/p_max;
         }
 
         console.log('redraw', w, h);
 
-        bg_ctx.clearRect(0, 0, w, h);
-        fg_ctx.clearRect(0, 0, w, h);
+
+        /*** bg layer ***/
+        bg_ctx.beginPath();
+        bg_ctx.clearRect(0, 0, w, h_full);
+        bg_ctx.textAlign = 'center';
+        bg_ctx.textBaseline = 'top';
+        bg_ctx.font = 'italic 12px sans-serif';
+        bg_ctx.strokeStyle = bg_ctx.fillStyle = '#666';
+        bg_ctx.lineWidth = 2;
+
+        // labels
+        bg_ctx.fillText('Z', w-10, h+5);
+        bg_ctx.fillText('p', w/2-10, 5);
         
-        // Axes
-        bg_ctx.moveTo(0, h-20);
-        bg_ctx.lineTo(w, h-20);
-        bg_ctx.strokeStyle = '#00f';
-        bg_ctx.stroke();
-
-        bg_ctx.moveTo(w/2, h-20);
-        bg_ctx.lineTo(w/2, 0);
-        bg_ctx.strokeStyle = '#00f';
-        bg_ctx.stroke();
-
-        fg_ctx.moveTo(0, p_y(pdf(x_z(0))));
-        for (var x = 1; x < w; ++x) {
-            fg_ctx.lineTo(x, p_y(pdf(x_z(x))));
+        // x-axis
+        bg_ctx.moveTo(0, h);
+        bg_ctx.lineTo(w, h);
+        bg_ctx.moveTo(arrow_size, h-arrow_size);
+        bg_ctx.lineTo(0, h);
+        bg_ctx.lineTo(arrow_size, h+arrow_size);
+        bg_ctx.moveTo(w-arrow_size, h-arrow_size);
+        bg_ctx.lineTo(w, h);
+        bg_ctx.lineTo(w-arrow_size, h+arrow_size);
+        for (z = -Math.floor(z_width/2); z <= z_width/2; ++z) {
+            x = z_x(z);
+            bg_ctx.moveTo(x, h);
+            bg_ctx.lineTo(x, h+5);
+            bg_ctx.fillText(z.toString(), x, h+5);
         }
+        // y-axis
+        bg_ctx.moveTo(w/2, h);
+        bg_ctx.lineTo(w/2, 0);
+        bg_ctx.moveTo(w/2-arrow_size, arrow_size);
+        bg_ctx.lineTo(w/2, 0);
+        bg_ctx.lineTo(w/2+arrow_size, arrow_size);
+        bg_ctx.textBaseline = 'middle';
+        bg_ctx.textAlign = 'right';
+        for (p = 0.1; p < p_max; p += 0.1) {
+            y = p_y(p);
+            bg_ctx.moveTo(w/2, y);
+            bg_ctx.lineTo(w/2 - 5, y);
+            bg_ctx.fillText('0.' + Math.round(10*p), w/2-10, y);
+        }
+        bg_ctx.stroke();
+
+
+        /*** fg layer ***/
+        fg_ctx.beginPath();
+        fg_ctx.clearRect(0, 0, w, h_full);
+
+        // Curves: this could be optimized by caching pdf values.
+        var dp2 = vm.d_prime() / 2;
+        console.log('dp2:', dp2);
+
+        // target pdf
+        fg_ctx.beginPath();
+        fg_ctx.moveTo(0, p_y(pdf(x_z(0) - dp2)));
+        for (x = 1; x < w; ++x) {
+            fg_ctx.lineTo(x, p_y(pdf(x_z(x) - dp2)));
+        }
+        fg_ctx.strokeStyle = '#0a2';
         fg_ctx.stroke();
+
+        // foil pdf
+        fg_ctx.beginPath();
+        fg_ctx.moveTo(0, p_y(pdf(x_z(0) + dp2)));
+        for (x = 1; x < w; ++x) {
+            fg_ctx.lineTo(x, p_y(pdf(x_z(x) + dp2)));
+        }
+        fg_ctx.strokeStyle = '#a20';
+        fg_ctx.stroke();
+
+        // criterion line
+        var c_x = z_x(vm.c());
+        c_ctx.beginPath();
+        c_ctx.clearRect(0, 0, w, h_full);
+        c_ctx.moveTo(c_x, 0);
+        c_ctx.lineTo(c_x, h+5);
+        c_ctx.lineWidth = 2;
+        c_ctx.strokeStyle = c_ctx.fillStyle = '#03d';
+        c_ctx.stroke();
+        c_ctx.font = 'italic 12px sans-serif';
+        c_ctx.textAlign = 'center';
+        c_ctx.textBaseline = 'top';
+        c_ctx.fillText('C', c_x, h+5);
     }
 
-    function SDTViewModel() {
+    function SDTViewModel(redraw) {
         var self = this;
         this.prob = {
-            hit: highlightable(0.8),
-            miss: highlightable(0.2),
-            fa: highlightable(0.2),
-            cr: highlightable(0.8)
+            hit: observable_hl(0.8),
+            miss: computed_hl({
+                read: function () {
+                    return 1-self.prob.hit();
+                },
+                write: function (miss) {
+                    self.prob.hit(1-miss);
+                }
+            }),
+            fa: observable_hl(0.2),
+            cr: computed_hl({
+                read: function () {
+                    return 1-self.prob.fa();
+                },
+                write: function (cr) {
+                    self.prob.fa(1-cr);
+                }
+            })
         };
         this.z = {
-            hit: highlightable(),
-            fa: highlightable(),
+            hit: computed_hl({
+                read: function () {
+                    return probit(self.prob.hit());
+                },
+                write: function (zhit) {
+                    self.prob.hit(cdf(zhit));
+                }
+            }),
+            fa: computed_hl({
+                read: function () {
+                    return probit(self.prob.fa());
+                },
+                write: function (zfa) {
+                    self.prob.fa(cdf(zfa));
+                }
+            })
         };
-        this.d_prime = highlightable();
-        this.c = highlightable();
-
-
+        this.d_prime = computed_hl({
+            read: function () {
+                return self.z.hit() - self.z.fa();
+            },
+            write: function (dp) {
+                var c = self.c();
+                self.prob.hit(cdf(c - dp/2));
+                self.prob.fa(cdf(dp/2 + c));
+            }
+        });
+        this.d_prime_delayed = ko.computed(this.d_prime).extend({rateLimit: 100});
+        this.c = computed_hl({
+            read: function () {
+                return -(self.z.hit() + self.z.fa())/2;
+            },
+            write: function (c) {
+                var dp = self.d_prime();
+                self.z.hit(dp/2 - c);
+                self.z.fa(-dp/2 + c);
+            }
+        });
+        this.d_prime_delayed.subscribe(function(dp) {
+            redraw(self);
+        });
     }
 
-    function highlightable() {
-        var o = ko.observable();
+    function observable_hl(val) {
+        var o = ko.observable(val);
+        o.highlight = ko.observable(false);
+        return o;
+    }
+    function computed_hl(options) {
+        options.deferEvaluation = true;
+        var o = ko.computed.call(ko, options);
         o.highlight = ko.observable(false);
         return o;
     }

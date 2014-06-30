@@ -13,57 +13,65 @@
         #graph > canvas {
             position: absolute;
         }
+        #graph > canvas.highlightable {
+            opacity: 0.5;
+            transition: all 0.2s;
+        }
+        #graph > canvas.highlightable.highlight {
+            opacity: 1;
+        }
     </style>
 </head>
 <body>
     <div id="graph">
         <canvas class="bg" width="800" height="400"></canvas>
-        <canvas class="cr-fill"  width="800" height="400" data-bind="css: {highlight: prob.cr.highlight}"></canvas>
-        <canvas class="hit-fill"  width="800" height="400" data-bind="css: {highlight: prob.hit.highlight}"></canvas>
-        <canvas class="fa-fill"  width="800" height="400" data-bind="css: {highlight: prob.fa.highlight}"></canvas>
-        <canvas class="miss-fill"  width="800" height="400" data-bind="css: {highlight: prob.miss.highlight}"></canvas>
+        <canvas class="cr-fill highlightable"  width="800" height="400" data-bind="css: {highlight: prob.cr.highlight}"></canvas>
+        <canvas class="hit-fill highlightable"  width="800" height="400" data-bind="css: {highlight: prob.hit.highlight}"></canvas>
+        <canvas class="fa-fill highlightable"  width="800" height="400" data-bind="css: {highlight: prob.fa.highlight}"></canvas>
+        <canvas class="miss-fill highlightable"  width="800" height="400" data-bind="css: {highlight: prob.miss.highlight}"></canvas>
         <canvas class="fg"  width="800" height="400"></canvas>
+        <canvas class="c highlightable"  width="800" height="400" data-bind="css: {highlight: c.highlight}"></canvas>
     </div>
     <form id="params">
         <fieldset class="probabilities">
             <h3>Response Probabilities</h3>
             <div class="targets">
-                <label data-bind="hover: prob.hit.highlight, css: {highlight: prob.hit.highlight}">
+                <label data-bind="css: {highlight: prob.hit.highlight}">
                     <span class="label">P(hit)</span>
-                    <input type="number" data-bind="value: prob.hit">
+                    <input type="number" min="0.05" max="0.95" step="0.05" data-bind="value: prob.hit, hasFocus: prob.hit.highlight">
                 </label>
-                <label data-bind="hover: prob.miss.highlight, css: {highlight: prob.miss.highlight}">
+                <label data-bind="css: {highlight: prob.miss.highlight}">
                     <span class="label">P(miss)</span>
-                    <input type="number" data-bind="value: prob.miss">
+                    <input type="number" min="0.05" max="0.95" step="0.05" data-bind="value: prob.miss, hasFocus: prob.miss.highlight">
                 </label>
             </div>
             <div class="foils">
-                <label data-bind="hover: prob.fa.highlight, css: {highlight: prob.fa.highlight}">
+                <label data-bind="css: {highlight: prob.fa.highlight}">
                     <span class="label">P(fa)</span>
-                    <input type="number" data-bind="value: prob.hit">
+                    <input type="number" min="0.05" max="0.95" step="0.05" data-bind="value: prob.fa, hasFocus: prob.fa.highlight">
                 </label>
-                <label data-bind="hover: prob.cr.highlight, css: {highlight: prob.cr.highlight}">
+                <label data-bind="css: {highlight: prob.cr.highlight}">
                     <span class="label"><abbr></abbr> P(cr)</span>
-                    <input type="number" data-bind="value: prob.miss">
+                    <input type="number" min="0.05" max="0.95" step="0.05" data-bind="value: prob.cr, hasFocus: prob.cr.highlight">
                 </label>
             </div>
         </fieldset>
         <fieldset class="z-scores">
-            <label data-bind="hover: z.hit.highlight, css: {highlight: z.hit.highlight}">
+            <label data-bind="css: {highlight: z.hit.highlight}">
                 <span class="label">Z(hit)</span>
                 <input type="number" data-bind="value: z.hit">
             </label>
-            <label data-bind="hover: z.fa.highlight, css: {highlight: z.fa.highlight}">
+            <label data-bind="css: {highlight: z.fa.highlight}">
                 <span class="label">Z(fa)</span>
                 <input type="number" data-bind="value: z.fa">
             </label>
-            <label data-bind="hover: d_prime.highlight, css: {highlight: d_prime.highlight}">
+            <label data-bind="css: {highlight: d_prime.highlight}">
                 <span class="label">d'</span>
-                <input type="number" data-bind="value: d_prime">
+                <input type="number" data-bind="value: d_prime, hasFocus: d_prime.highlight">
             </label>
-            <label data-bind="hover: c.highlight, css: {highlight: c.highlight}">
+            <label data-bind="css: {highlight: c.highlight}">
                 <span class="label">C</span>
-                <input type="number" data-bind="value: c">
+                <input type="number" data-bind="value: c, hasFocus: c.highlight">
             </label>
         </fieldset>
     </form>
