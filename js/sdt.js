@@ -94,18 +94,21 @@
         fa_color = '#faa',
         cr_color = '#fd8',
         criterion_color = '#03e',
-        criterion_line_dash = [6, 3];
+        criterion_line_dash = [6, 3],
+        dprime_color = '#e06',
+        dprime_line_dash = [6, 3];
 
     function redraw(vm) {
         var graph = document.getElementById('graph'),
             axes_ctx = graph.querySelector('canvas.axes').getContext('2d'),
             fg_ctx = graph.querySelector('canvas.fg').getContext('2d'),
             c_ctx = graph.querySelector('canvas.c').getContext('2d'),
+            dprime_ctx = graph.querySelector('canvas.dprime').getContext('2d'),
             hit_ctx = graph.querySelector('canvas.hit').getContext('2d'),
             miss_ctx = graph.querySelector('canvas.miss').getContext('2d'),
             fa_ctx = graph.querySelector('canvas.fa').getContext('2d'),
             cr_ctx = graph.querySelector('canvas.cr').getContext('2d'),
-            ctxs = [axes_ctx, fg_ctx, c_ctx, hit_ctx, miss_ctx, fa_ctx, cr_ctx],
+            ctxs = [axes_ctx, fg_ctx, c_ctx, dprime_ctx, hit_ctx, miss_ctx, fa_ctx, cr_ctx],
             w = axes_ctx.canvas.width,
             h_full = axes_ctx.canvas.height,
             h = h_full - bottom_margin,
@@ -139,12 +142,8 @@
         // x-axis
         axes_ctx.moveTo(0, h);
         axes_ctx.lineTo(w, h);
-        axes_ctx.moveTo(arrow_size+2, h-arrow_size);
-        axes_ctx.lineTo(1, h);
-        axes_ctx.lineTo(arrow_size+2, h+arrow_size);
-        axes_ctx.moveTo(w-arrow_size-2, h-arrow_size);
-        axes_ctx.lineTo(w-1, h);
-        axes_ctx.lineTo(w-arrow_size-2, h+arrow_size);
+        arrow(axes_ctx, 0, h, 'left');
+        arrow(axes_ctx, w, h, 'right');
         axes_ctx.font = '12px sans-serif';
         for (z = -Math.floor(z_width/2); z <= z_width/2; ++z) {
             x = z_x(z);
@@ -155,9 +154,7 @@
         // y-axis
         axes_ctx.moveTo(w/2, h);
         axes_ctx.lineTo(w/2, 0);
-        axes_ctx.moveTo(w/2-arrow_size, arrow_size+2);
-        axes_ctx.lineTo(w/2, 1);
-        axes_ctx.lineTo(w/2+arrow_size, arrow_size+2);
+        arrow(axes_ctx, w/2, 0, 'up');
         axes_ctx.textBaseline = 'middle';
         axes_ctx.textAlign = 'right';
         for (p = 0.1; p < p_max; p += 0.1) {
@@ -235,6 +232,51 @@
         c_ctx.textAlign = 'center';
         c_ctx.textBaseline = 'top';
         c_ctx.fillText('C', c_x, h+5);
+
+        // dprime line
+        var dp_x0 = z_x(-vm.d_prime()/2),
+            dp_x1 = z_x(vm.d_prime()/2),
+            dp_y = p_y(pdf(0)) - 10;
+        dprime_ctx.moveTo(dp_x0, dp_y);
+        dprime_ctx.lineTo(dp_x1, dp_y);
+        dprime_ctx.lineWidth = 2;
+        dprime_ctx.strokeStyle = dprime_ctx.fillStyle = dprime_color;
+        dprime_ctx.setLineDash(dprime_line_dash);
+        dprime_ctx.stroke();
+        dprime_ctx.beginPath();
+        dprime_ctx.setLineDash([]);
+        arrow(dprime_ctx, dp_x0, dp_y, 'left');
+        arrow(dprime_ctx, dp_x1, dp_y, 'right');
+        dprime_ctx.stroke();
+        dprime_ctx.font = 'italic 12px sans-serif';
+        dprime_ctx.textAlign = 'right';
+        dprime_ctx.textBaseline = 'bottom';
+        dprime_ctx.fillText("d'", dp_x1-5, dp_y-5);
+    }
+
+    function arrow(ctx, x, y, orientation) {
+        switch (orientation) {
+        case 'left':
+            ctx.moveTo(x + arrow_size + 2, y - arrow_size);
+            ctx.lineTo(x + 1, y);
+            ctx.lineTo(x + arrow_size + 2, y + arrow_size);
+            break;
+        case 'right':
+            ctx.moveTo(x - arrow_size - 2, y - arrow_size);
+            ctx.lineTo(x - 1, y);
+            ctx.lineTo(x - arrow_size - 2, y + arrow_size);
+            break;
+        case 'up':
+            ctx.moveTo(x - arrow_size, y + arrow_size + 2);
+            ctx.lineTo(x, y + 1);
+            ctx.lineTo(x + arrow_size, y + arrow_size + 2);
+            break;
+        case 'down':
+            ctx.moveTo(x - arrow_size, y - arrow_size - 2);
+            ctx.lineTo(x, y - 1);
+            ctx.lineTo(x + arrow_size, y - arrow_size - 2);
+            break;
+        }
     }
 
     function SDTViewModel(redraw) {
