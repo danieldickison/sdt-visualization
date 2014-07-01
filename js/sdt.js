@@ -18,9 +18,9 @@
             element.addEventListener('mousedown', function (event) {
                 y0 = event.clientY;
                 tracking = false;
-                document.body.addEventListener('mousemove', drag, false);
-                document.body.addEventListener('mouseup', mouseup, false);
-                document.body.addEventListener('mouseleave', mouseup, false);
+                document.addEventListener('mousemove', drag, false);
+                document.addEventListener('mouseup', mouseup, false);
+                document.addEventListener('mouseleave', mouseup, false);
             }, false);
 
             function getOptions() {
@@ -44,18 +44,22 @@
                         v0 = options.value();
                     options.value(v0 + dv);
                     options.value.highlight(true);
+                    event.preventDefault();
                 }
                 else if (Math.abs(y - y0) > nullZone) {
                     tracking = true;
                 }
                 y_prev = y;
-                event.preventDefault();
             }
 
             function mouseup(event) {
-                document.body.removeEventListener('mousemove', drag);
-                document.body.removeEventListener('mouseup', mouseup);
-                document.body.removeEventListener('mouseleave', mouseup);
+                document.removeEventListener('mousemove', drag);
+                document.removeEventListener('mouseup', mouseup);
+                document.removeEventListener('mouseleave', mouseup);
+                if (tracking) {
+                    getOptions().value.highlight(false);
+                    event.preventDefault();
+                }
             }
         }
     };
@@ -278,9 +282,11 @@
                 return self.z.hit() - self.z.fa();
             },
             write: function (dp) {
-                var c = self.c();
-                self.prob.hit(cdf(c - dp/2));
-                self.prob.fa(cdf(dp/2 + c));
+                var zhit = self.z.hit(),
+                    zfa = self.z.fa(),
+                    diff = dp - (zhit - zfa);
+                self.z.hit(zhit + diff/2);
+                self.z.fa(zfa - diff/2);
             }
         }, -6, 6);
         this.c = computed_ui({
