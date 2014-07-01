@@ -70,16 +70,16 @@
         return ko.computed({
             read: target,
             write: function(newValue) {
-                if (newValue < options.min) {
-                    newValue = options.min;
+                var current = target(),
+                    valueToWrite = Math.max(min, Math.min(max, newValue));
+                if (valueToWrite !== current) {
+                    target(valueToWrite);
+                } else if (newValue !== current) {
+                    target.notifySubscribers(valueToWrite);
                 }
-                else if (newValue > options.max) {
-                    newValue = options.max;
-                }
-                target(newValue);
             },
             deferEvaluation: true
-        });
+        }).extend({notify: 'always'});
     };
 
 
@@ -248,7 +248,7 @@
                 write: function (miss) {
                     self.prob.hit(1-miss);
                 }
-            }, 0.01, 0.99),
+            }),
             fa: observable_ui(0.3, 0.01, 0.99),
             cr: computed_ui({
                 read: function () {
@@ -257,7 +257,7 @@
                 write: function (cr) {
                     self.prob.fa(1-cr);
                 }
-            }, 0.01, 0.99)
+            })
         };
         this.z = {
             hit: computed_ui({
@@ -267,7 +267,7 @@
                 write: function (zhit) {
                     self.prob.hit(cdf(zhit));
                 }
-            }, -3, 3),
+            }),
             fa: computed_ui({
                 read: function () {
                     return probit(self.prob.fa());
@@ -275,7 +275,7 @@
                 write: function (zfa) {
                     self.prob.fa(cdf(zfa));
                 }
-            }, -3, 3)
+            })
         };
         this.d_prime = computed_ui({
             read: function () {
@@ -288,17 +288,19 @@
                 self.z.hit(zhit + diff/2);
                 self.z.fa(zfa - diff/2);
             }
-        }, -6, 6);
+        });
         this.c = computed_ui({
             read: function () {
                 return -(self.z.hit() + self.z.fa())/2;
             },
             write: function (c) {
-                var dp = self.d_prime();
-                self.z.hit(dp/2 - c);
-                self.z.fa(-dp/2 + c);
+                var zhit = self.z.hit(),
+                    zfa = self.z.fa(),
+                    diff = c + (zhit + zfa)/2;
+                self.z.hit(zhit - diff);
+                self.z.fa(zfa - diff);
             }
-        }, -2, 2);
+        });
         this.d_prime_delayed = ko.computed(this.d_prime).extend({rateLimit: 100});
         this.d_prime_delayed.subscribe(function(dp) {
             redraw(self);
@@ -320,7 +322,7 @@
     }
     function computed_ui(options, min, max) {
         options.deferEvaluation = true;
-        var o = ko.computed.call(ko, options).extend({limitRange: {min: min, max: max}});
+        var o = ko.computed.call(ko, options);
         o.highlight = ko.observable(false);
         o.str = ko.computed({
             read: function () {
