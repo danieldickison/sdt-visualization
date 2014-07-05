@@ -514,7 +514,7 @@
              *
              * Note that we do want symmetry(0), lower/upper -> hence use y
              */
-            else if (lower && -37.5193 < x  &&  x < 8.2924) {
+            else if (-37.5193 < x  &&  x < 8.2924) {
                 /* Evaluate pnorm for x in (-37.5, -5.657) union (5.657, 37.5) */
                 xsq = 1.0 / (x * x); /* (1./x)*(1./x) might be better */
                 xnum = p[5] * xsq;
@@ -536,14 +536,6 @@
             return cum;
         };
     })();
-
-
-
-
-
-
-
-
 
     // http://home.online.no/~pjacklam/notes/invnorm/
     var probit = (function () {
